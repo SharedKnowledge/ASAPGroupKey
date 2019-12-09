@@ -276,39 +276,6 @@ public class GKENode implements ASAPJavaApplication{
 		return multiEngine;
 	}
 	
-//	private class MessageChunkReceivedListenerWrapper implements ASAPChunkReceivedListener {
-//		private final ASAPMessageReceivedListener listener;
-//
-//		public MessageChunkReceivedListenerWrapper(ASAPMessageReceivedListener listener) throws ASAPException {
-//			if (listener == null)
-//				throw new ASAPException("listener must not be null");
-//			this.listener = listener;
-//		}
-//
-//		@Override
-//		public void chunkReceived(String format, String sender, String uri, int era) {
-//			System.out.println(getLogStart() + "chunk received - convert to asap message received");
-//			try {
-//				ASAPEngine engine = this.getMultiEngine().getEngineByFormat(format);
-//				ASAPMessages messages = engine.getIncomingChunkStorage(sender).getASAPChunkCache(uri, era);
-//				this.listener.asapMessagesReceived(messages);
-//				System.out.println("************Inside listener*****");
-//				System.out.println("**");
-//				System.out.println("**");
-//				System.out.println("**");
-//				System.out.println("**");
-//				System.out.println("**");
-//				System.out.println("**");
-//			} catch (ASAPException | IOException e) {
-//				System.out.println(getLogStart() + e.getLocalizedMessage());
-//			}
-//		}
-//
-//		public MultiASAPEngineFS getMultiEngine() {
-//			return multiEngine;
-//		}
-//
-//	}
 	
 	private String getLogStart() {
 		return this.getClass().getSimpleName() + ": ";
