@@ -52,7 +52,7 @@ public class GKENode implements ASAPJavaApplication{
 	final static BigInteger base = BigInteger.valueOf(Integer.parseInt(hex, 16));
 	public static final CharSequence APP = "GKE";
 	private MultiASAPEngineFS multiEngine;
-	CharSequence name;
+	CharSequence owner;
 	CharSequence folder;
 	Collection<CharSequence> formats;
 	Collection<CharSequence> recipents;
@@ -66,22 +66,53 @@ public class GKENode implements ASAPJavaApplication{
 		this.pubKey = pubKey;
 	}
 	
-	public GKENode(BigInteger pubkey, String name, String folder, Collection<CharSequence> formats, Collection<CharSequence> recipents)
+	public GKENode(BigInteger pubkey, String owner, String folder, Collection<CharSequence> formats, Collection<CharSequence> recipents)
 			throws IOException, ASAPException {
 		this.pubKey = pubKey;
 		//this.asap = ASAPJavaApplicationFS.createASAPJavaApplication("TestAliceNoUSe", "test/ALiceNoUse", formats);
-		this.name = name;
+		this.owner = owner;
 		this.folder = folder;
 		this.formats = formats;
-		this.multiEngine = this.getMulitEngine();
+		this.multiEngine = this.createMulitEngine();
 		this.recipents = recipents;
 
 		if (formats != null && !formats.isEmpty()) {
 			// ensure that supported format engine are up and running
-			for (CharSequence i : formats) {
-				this.multiEngine.createEngineByFormat(i);
+			for (CharSequence format : formats) {
+				System.out.println("GKENode(..): createEngineByFormat: (format=" + format + ")");
+				ASAPEngine engine = this.multiEngine.createEngineByFormat(format);
+				
+				// Set up manamengt storage(s?)
+	        	System.out.println("engine 'name,format:" + owner + " " + format + "', manament storage set==" + engine.isASAPManagementStorageSet());
+	        	
+	        	ASAPStorage storage = ASAPEngineFS.getASAPStorage(owner, folder, APP);
+	        	engine.addRecipient("gke://"+owner, owner);
+	        	System.out.println("... storage: owner:" + storage.getOwner()+ ",chan URIs:"+storage.getChannelURIs());
+
+	            engine.setASAPManagementStorage(ASAPEngineFS.getASAPStorage(owner,
+	                    //TESTS_ROOT_FOLDER + "/" + owner + "/ASAPManagement",
+	            		"/home/vova/eclipse-workspace/GKE/root/" + owner + "/ASAPManagement",  
+	            		"asap/control"));
+	                    //ASAP_1_0.ASAP_MANAGEMENT_FORMAT));
+	            
+	            System.out.println("engine 'name,format:" + owner + " " + format + "', manament storage set==" + engine.isASAPManagementStorageSet());
+	            
 			}
 		}
+		
+		
+		
+        /*ASAPStorage storage = ASAPEngineFS.getASAPStorage(owner, folder, APP);
+        if(!storage.isASAPManagementStorageSet()) {
+            storage.setASAPManagementStorage(ASAPEngineFS.getASAPStorage(owner,
+                    TESTS_ROOT_FOLDER + "/" + owner + "/ASAPManagement",
+                    ASAP_1_0.ASAP_MANAGEMENT_FORMAT));
+        }
+
+        this.storages.put(this.getStorageKey(owner, APP), storage);*/
+        
+
+
 	}
 //
 //	public GKENode(BigInteger pubkey, String name, String folder, Collection<CharSequence> formats)
@@ -233,38 +264,48 @@ public class GKENode implements ASAPJavaApplication{
 //	}
 
 	@Override
-	public void handleConnection(InputStream arg0, OutputStream arg1) throws IOException, ASAPException {
+	public void handleConnection(InputStream inputStream, OutputStream outputStream) throws IOException, ASAPException {
 		// TODO Auto-generated method stub
-		
+		System.out.println("handleConnection(..)");
+		//ASAPEngine engine = this.multiEngine/*createMulitEngine()*/.getEngineByFormat(APP);
+		//ASAPMessageReceivedListener listener = this.messageReceivedListener.get(APP);
+		//engine.handleConnection(inputStream, outputStream, engine.);
+		this.multiEngine.handleConnection(inputStream, outputStream);
 	}
 
 	@Override
 	public void sendASAPMessage(CharSequence format, CharSequence uri, Collection<CharSequence> recipents, byte[] message)
 			throws ASAPException, IOException {
 		
-		  ASAPEngine engine = this.getMulitEngine().getEngineByFormat(format);
-
-	        engine.createChannel(uri, recipents);
-	        engine.add(uri, message);
+		System.out.println("sendASAPMessage(format="+format+",uri="+uri+")");
 		
+		ASAPEngine engine = this.multiEngine/*createMulitEngine()*/.getEngineByFormat(format);
+
+        engine.createChannel(uri, recipents);
+        engine.add(uri, message);
+   
+  
 	}
 
 	@Override
 	public void setASAPMessageReceivedListener(CharSequence format, ASAPMessageReceivedListener listener)
 			throws ASAPException, IOException {
-	
-        // wrap receiver and add listener to multiengine
-        this.getMulitEngine().setASAPChunkReceivedListener(format, new MessageListenerWrapper(listener));
-
         // set with multi engine
+    	System.out.println("******************* inside the methode setASAPMessageListener(format="+format+",..)");
+
+		
+        // wrap receiver and add listener to multiengine
+        this.multiEngine/*createMulitEngine()*/.setASAPChunkReceivedListener(format, new MessageListenerWrapper(listener));
+
+
         this.messageReceivedListener.put(format, listener);
 		
 	}
 	
-	private MultiASAPEngineFS getMulitEngine() throws IOException, ASAPException {
+	private MultiASAPEngineFS createMulitEngine() throws IOException, ASAPException {
 		// TODO: re-create any time - keep track of potential changes in external
 		// storage (file system)?
-		MultiASAPEngineFS multiEngine = MultiASAPEngineFS_Impl.createMultiEngine(name, folder,
+		MultiASAPEngineFS multiEngine = MultiASAPEngineFS_Impl.createMultiEngine(owner, folder,
 				MultiASAPEngineFS.DEFAULT_MAX_PROCESSING_TIME, null);
 
 		for (CharSequence format : this.messageReceivedListener.keySet()) {
@@ -290,11 +331,11 @@ public class GKENode implements ASAPJavaApplication{
 	}
 
 	public CharSequence getName() {
-		return name;
+		return owner;
 	}
 
 	public void setName(CharSequence name) {
-		this.name = name;
+		this.owner = name;
 	}
 
 	public CharSequence getFolder() {
